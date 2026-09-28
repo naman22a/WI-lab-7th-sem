@@ -1,0 +1,51 @@
+services:
+  website:
+    image: nginx:alpine
+    container_name: lab-website
+    ports:
+      - "8080:80"
+    volumes:
+      - ./website:/usr/share/nginx/html:ro
+    networks:
+      - analytics
+
+  db:
+    image: mariadb:11
+    container_name: matomo-db
+    environment:
+      MYSQL_DATABASE: matomo
+      MYSQL_USER: matomo
+      MYSQL_PASSWORD: matomo_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - matomo-db:/var/lib/mysql
+    networks:
+      - analytics
+    restart: unless-stopped
+
+  matomo:
+    image: matomo:latest
+    container_name: matomo
+    ports:
+      - "8081:80"
+    environment:
+      MATOMO_DATABASE_HOST: db
+      MATOMO_DATABASE_ADAPTER: mysql
+      MATOMO_DATABASE_TABLES_PREFIX: matomo_
+      MATOMO_DATABASE_USERNAME: matomo
+      MATOMO_DATABASE_PASSWORD: matomo_password
+      MATOMO_DATABASE_DBNAME: matomo
+    volumes:
+      - matomo-data:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - analytics
+    restart: unless-stopped
+
+volumes:
+  matomo-db:
+  matomo-data:
+
+networks:
+  analytics:
